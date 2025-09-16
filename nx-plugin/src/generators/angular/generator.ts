@@ -144,6 +144,8 @@ export async function angularGenerator(
 
   adaptJestConfig(tree);
 
+  adaptJestTestSetup(tree);
+
   adaptAngularPrefixConfig(tree);
 
   await formatFiles(tree);
@@ -270,6 +272,25 @@ function adaptProjectConfiguration(
     },
   };
   updateProjectConfiguration(tree, names(options.name).fileName, config);
+}
+
+function adaptJestTestSetup(tree: Tree) {
+  const file = 'src/test-setup.ts';
+  // Append to the file
+  const content = tree.read(file, 'utf8');
+  tree.write(
+    file,
+    content +
+    `\n` +
+    `// Suppress warnings about css parsing errors (caused by jsdom)\n` +
+    `const originalConsoleError = console.error;
+console.error = function (...data) {
+  if (
+    typeof data[0]?.toString === 'function' &&
+    data[0].toString().includes('Error: Could not parse CSS stylesheet')
+  ) return;
+  originalConsoleError(...data);
+};`);
 }
 
 function adaptJestConfig(tree: Tree) {
